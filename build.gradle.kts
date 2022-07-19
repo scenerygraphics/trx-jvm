@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation("org.slf4j:slf4j-api:1.7.36")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10")
+    implementation(kotlin("reflect"))
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
     implementation("org.joml:joml:1.10.4")
 
@@ -32,7 +32,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "11"
 }
 
 application {
