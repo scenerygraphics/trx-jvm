@@ -1,6 +1,6 @@
 # trx-jvm
 
-A library implementing [TRX (say, tee-ar-ex)](https://github.com/tee-ar-ex) file reading for JVM-based languages.
+A library implementing [TRX (say, tee-ar-ex)](https://github.com/tee-ar-ex) file reading for JVM-based languages. trx-jvm was written with performance in mind, and uses [imglib2](https://github.com/imglib/imglib2) CellImgs for large array storage and access. It is able to parse and load a 4 GiB TRX file with 500000 streamlines in about 18 seconds[^1].
 
 ## Building
 
@@ -29,3 +29,5 @@ dependencies {
     implementation("com.github.scenerygraphics:trx-jvm:master-SNAPSHOT")
 }
 ```
+
+[^1]: Single-threaded, tested on a 2021 M1 Max MacBook Pro.
