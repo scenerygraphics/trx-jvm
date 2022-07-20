@@ -1,5 +1,6 @@
 package graphics.scenery.trx
 
+import graphics.scenery.trx.utils.LazyLogger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,10 +10,13 @@ import kotlin.test.assertEquals
  * @author Ulrik Guenther <hello@ulrik.is>
  */
 class TRXReaderTests {
+    private val logger by LazyLogger()
+
     /**
      * Tests the reader using the DPSV test file.
      */
     @Test fun readDPSV() {
+        logger.info("Reading dpsv.trx...")
         val trx = TRXReader.readTRXfromStream(this.javaClass.getResource("dpsv.trx").openStream())
         assertEquals(trx.header.streamlineCount, 460)
         assertEquals(trx.header.vertexCount, 95865)
@@ -22,6 +26,7 @@ class TRXReaderTests {
      * Tests the reader using the Small test file.
      */
     @Test fun readSmall() {
+        logger.info("Reading small.trx...")
         val trx = TRXReader.readTRXfromStream(this.javaClass.getResource("small.trx").openStream())
         assertEquals(trx.header.streamlineCount, 1000)
         assertEquals(trx.header.vertexCount, 33886)
@@ -34,8 +39,10 @@ class TRXReaderTests {
     @Test fun readFile() {
         val file = System.getProperty("trx.filename")
         if(file == null) {
+            logger.info("Reading dpsv.trx...")
             TRXReader.readTRXfromStream(this.javaClass.getResource("dpsv.trx").openStream())
         } else {
+            logger.info("Reading $file...")
             TRXReader.readTRX(file)
         }
     }
