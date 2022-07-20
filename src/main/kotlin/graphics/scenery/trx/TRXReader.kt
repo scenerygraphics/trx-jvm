@@ -11,6 +11,12 @@ import graphics.scenery.trx.utils.HalfFloat
 import graphics.scenery.trx.utils.LazyLogger
 import graphics.scenery.trx.utils.MatrixDeserializer
 import graphics.scenery.trx.utils.VectorDeserializer
+import net.imglib2.img.Img
+import net.imglib2.img.cell.CellImgFactory
+import net.imglib2.type.numeric.integer.LongType
+import net.imglib2.type.numeric.integer.UnsignedLongType
+import net.imglib2.type.numeric.real.FloatType
+import net.imglib2.view.Views
 import org.joml.Matrix4f
 import org.joml.Vector3i
 import java.io.File
@@ -83,8 +89,8 @@ class TRXReader {
             }
             var header: TRXHeader? = null
             var streamlines: List<Streamline>? = null
-            var offsets: ULongArray? = null
-            var vertices: FloatArray? = null
+            var offsets: Img<UnsignedLongType>? = null
+            var vertices: Img<FloatType>? = null
 
             while(entry != null) {
                 if(entry.isDirectory) {
@@ -93,11 +99,12 @@ class TRXReader {
                 }
 
                 logger.debug("Found entry ${entry.name} with ${entry.size}/${entry.compressedSize} bytes")
-                val contents = source.readBytes()
-                logger.debug("Read ${contents.size} bytes")
+                var size = entry.size
 
                 when {
                     entry.name == "header.json" -> {
+                        val contents = source.readBytes()
+                        logger.debug("Read ${contents.size}/${size} bytes")
                         logger.debug("Header is ${String(contents)}")
                         header = mapper.readValue(
                             String(contents, charset = Charset.forName("UTF-8")),
@@ -110,48 +117,114 @@ class TRXReader {
                     }
 
                     entry.name.startsWith("offsets.") -> {
+                        if(size == -1L) {
+                            logger.warn("TRX file did not specify size for offsets, trying to use header information")
+                            size = header?.streamlineCount?.toLong() ?: throw IllegalStateException("Unable to determine offset count")
+                            logger.warn("Size from header is $size")
+                        }
+
                         offsets = if (entry.name.endsWith("uint32")) {
                             logger.info("Using 32bit offsets")
-                            val b = ByteBuffer
-                                .wrap(contents)
-                                .order(ByteOrder.LITTLE_ENDIAN)
-                                .asIntBuffer()
-                            val a = IntArray(contents.size/4)
-                            b.get(a)
-                            a.map { it.toULong() }.toULongArray()
+                            val storage = CellImgFactory(UnsignedLongType(), 100000000, 1).create(size/4)
+                            val iterator = storage.cursor()
+                            var p = iterator.next()
+                            val br = source.buffered(4096)
+                            val buf = ByteArray(4)
+
+                            while(iterator.hasNext()) {
+                                br.read(buf)
+                                val b = ByteBuffer
+                                    .wrap(buf)
+                                    .order(ByteOrder.LITTLE_ENDIAN)
+                                    .asIntBuffer()
+                                p.set(b.get().toLong())
+
+                                p = iterator.next()
+                            }
+                            storage
                         } else {
                             logger.info("Using 64bit offsets")
-                            val b = ByteBuffer
-                                .wrap(contents)
-                                .order(ByteOrder.LITTLE_ENDIAN)
-                                .asLongBuffer()
-                            val a = LongArray(contents.size/8)
-                            b.get(a)
-                            a.toULongArray()
+                            val storage = CellImgFactory(UnsignedLongType(), 100000000, 1).create(size/8)
+                            val iterator = storage.cursor()
+                            var p = iterator.next()
+                            val br = source.buffered(4096)
+                            val buf = ByteArray(8)
+
+                            while(iterator.hasNext()) {
+                                br.read(buf)
+                                val b = ByteBuffer
+                                    .wrap(buf)
+                                    .order(ByteOrder.LITTLE_ENDIAN)
+                                    .asLongBuffer()
+                                p.set(b.get())
+
+                                p = iterator.next()
+                            }
+                            storage
+                        }
+
+                        logger.info("Read ${offsets.dimension(0)} offsets")
+                        if(logger.isTraceEnabled) {
+                            val it = offsets.cursor()
+                            while(it.hasNext()) {
+                                logger.trace("o=${it.next().get()}")
+                            }
                         }
                     }
 
                     entry.name.startsWith("positions.3") -> {
+                        if(size == -1L) {
+                            logger.warn("TRX file did not specify size for positions, trying to use header information")
+                            size = 4 * (header?.vertexCount ?: throw IllegalStateException("Unable to determine offset count"))
+                            logger.warn("Size from header is $size")
+                        }
+
                         vertices = if(entry.name.endsWith("float16")) {
                             logger.info("Using float16 vertices")
-                            contents
-                                .asSequence()
-                                .windowed(2, 2)
-                                .map { HalfFloat(it.toByteArray()).getFullFloat() }
-                                .toList().toFloatArray()
+                            val storage = CellImgFactory(FloatType(), 100000000, 1).create(size/2)
+                            val iterator = storage.cursor()
+                            var p = iterator.next()
+                            val br = source.buffered(4096)
+                            val buf = ByteArray(2)
+
+                            while(iterator.hasNext()) {
+                                br.read(buf)
+                                p.set(HalfFloat(buf).getFullFloat())
+
+                                p = iterator.next()
+                            }
+                            storage
                         } else if(entry.name.endsWith("float32")) {
                             logger.info("Using float32 vertices")
-                            val b = ByteBuffer.wrap(contents)
-                            val array = FloatArray(b.remaining()/4)
-                            b.asFloatBuffer().get(array)
-                            array
+                            val storage = CellImgFactory(FloatType(), 100000000, 1).create(size/4)
+                            val iterator = storage.cursor()
+                            var p = iterator.next()
+                            val br = source.buffered(4096)
+                            val buf = ByteArray(4)
+
+                            while(iterator.hasNext()) {
+                                br.read(buf)
+                                val b = ByteBuffer
+                                    .wrap(buf)
+                                    .order(ByteOrder.LITTLE_ENDIAN)
+                                p.set(b.float)
+
+                                p = iterator.next()
+                            }
+                            storage
                         } else {
                             throw UnsupportedOperationException("float64 is not yet supported for positions.")
                         }
 
+                        logger.info("Read ${vertices.dimension(0)/3} vertices")
                         if(logger.isTraceEnabled) {
-                            vertices.toList().windowed(3, 3)
-                                .forEach { logger.trace("v=${it[0]},${it[1]},${it[2]}") }
+                            val it = vertices.cursor()
+                            while(it.hasNext()) {
+                                val x = it.next().get()
+                                val y = it.next().get()
+                                val z = it.next().get()
+                                logger.trace("v=$x,$y,$z")
+                            }
                         }
                     }
                 }
@@ -161,27 +234,40 @@ class TRXReader {
 
 
             if(header != null && vertices != null && offsets != null && streamlines != null) {
-                streamlines = offsets.windowed(size = 2, step = 1, partialWindows = true)
-                    .map {
-                        val range = if(it.size == 2) {
-                            it[0] to it[1]-1UL
-                        } else {
-                            it[0] to vertices.size.toULong()
-                        }
+                val offsetIterator = offsets.iterator()
+                val ra = vertices.randomAccess()
 
-                        val length = (range.second - range.first).toInt()+1
-                        logger.debug("Streamline: Range is ${range.first}-${range.second}, length $length")
-                        val v = FloatArray(length)
+                streamlines = ArrayList(header.streamlineCount)
+                var begin = offsetIterator.next().get().toULong()
+                var end = offsetIterator.next().get().toULong()
 
-                        for(i in range.first until range.second) {
-                            v[i.toInt()-range.first.toInt()] = vertices[i.toInt()]
-                        }
+                while(streamlines.size < header.streamlineCount) {
+                    val range = begin to end - 1UL
 
-                        Streamline(v)
-                    }.toList()
+                    val length = (range.second - range.first).toInt()+1
+                    logger.trace("Streamline: Range is {}-{}, length {}", range.first, range.second, length)
+                    val v = FloatArray(length)
+
+                    for(i in range.first until range.second) {
+                        ra.setPosition(longArrayOf(i.toLong(), 1L))
+                        v[(i-range.first).toInt()] = ra.get().get()
+                    }
+
+                    streamlines.add(Streamline(v))
+                    begin = end
+                    end = if(offsetIterator.hasNext()) {
+                        offsetIterator.next().get().toULong()
+                    } else {
+                        header.vertexCount.toULong()
+                    }
+
+                    if(end == 0UL) {
+                        end = header.vertexCount.toULong()
+                    }
+                }
 
                 val duration = System.nanoTime() - start
-                logger.info("Created ${streamlines.size} streamlines in ${duration/10e6}ms.")
+                logger.info("Created ${streamlines.size} streamlines in ${duration/10e5}ms.")
                 assert(streamlines.size == header.streamlineCount)
                 return TRX(header, streamlines)
             } else {
