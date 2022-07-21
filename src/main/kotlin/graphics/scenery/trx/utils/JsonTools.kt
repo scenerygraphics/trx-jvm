@@ -86,7 +86,8 @@ class MatrixDeserializer: JsonDeserializer<Any>() {
         val wrap = ByteBuffer
             .allocateDirect(floats.size * 4)
             .asFloatBuffer()
-            .put(floats, 0, floats.size)
+            .put(floats)
+            .flip()
 
         return when(floats.size) {
             4 -> Matrix2f(wrap)
