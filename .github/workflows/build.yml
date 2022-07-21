@@ -28,7 +28,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - uses: burrunan/gradle-cache-action@v1
-        name: Build scenery
+        name: Build trx-jvm 
         with:
           arguments: build --info --stacktrace
 
@@ -53,7 +53,7 @@ jobs:
           java-version: '${{ matrix.java }}'
           distribution: 'temurin'
       - uses: burrunan/gradle-cache-action@v1
-        name: Build scenery
+        name: Build trx-jvm
         with:
           arguments: build --info --stacktrace
 
@@ -80,6 +80,6 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - uses: burrunan/gradle-cache-action@v1
-        name: Build scenery
+        name: Build trx-jvm
         with:
           arguments: build --info --stacktrace
