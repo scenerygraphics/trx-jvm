@@ -1,4 +1,5 @@
 # trx-jvm
+[![build](https://github.com/scenerygraphics/trx-jvm/actions/workflows/build.yml/badge.svg)](https://github.com/scenerygraphics/trx-jvm/actions/workflows/build.yml)
 
 A library implementing [TRX (say, tee-ar-ex)](https://github.com/tee-ar-ex) file reading for JVM-based languages. trx-jvm was written with performance in mind, and uses [imglib2](https://github.com/imglib/imglib2) CellImgs for large array storage and access. It is able to parse and load a 4 GiB TRX file with 500000 streamlines in about 18 seconds[^1].
 
