@@ -1,0 +1,85 @@
+name: build
+
+on: [ push ]
+
+jobs:
+  linux-unittests:
+    name: 'Linux'
+    strategy:
+      # we disable fail-fast, as otherwise any failed job would cancel the others.
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            java: 11
+          - os: ubuntu-latest
+            java: 18
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '${{ matrix.java }}'
+          distribution: 'temurin'
+      #- name: Fix assistive technologies on Linux/JDK11
+      #  run: sudo sed -i -e '/^assistive_technologies=/s/^/#/' /etc/java-*-openjdk/accessibility.properties
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - uses: burrunan/gradle-cache-action@v1
+        name: Build scenery
+        with:
+          arguments: build --info --stacktrace
+
+  windows-unittests:
+    name: 'Windows'
+    strategy:
+      # we disable fail-fast, as otherwise any failed job would cancel the others.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            java: 11
+          - os: windows-latest
+            java: 18
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '${{ matrix.java }}'
+          distribution: 'temurin'
+      - uses: burrunan/gradle-cache-action@v1
+        name: Build scenery
+        with:
+          arguments: build --info --stacktrace
+
+  mac-unittests:
+    name: 'macOS'
+    strategy:
+      # we disable fail-fast, as otherwise any failed job would cancel the others.
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            java: 11
+          - os: macos-latest
+            java: 18
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: gradle/wrapper-validation-action@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '${{ matrix.java }}'
+          distribution: 'temurin'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - uses: burrunan/gradle-cache-action@v1
+        name: Build scenery
+        with:
+          arguments: build --info --stacktrace
