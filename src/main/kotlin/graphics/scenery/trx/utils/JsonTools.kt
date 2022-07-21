@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import org.joml.*
-import java.nio.FloatBuffer
+import java.nio.ByteBuffer
 
 class VectorDeserializer : JsonDeserializer<Any>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Any {
@@ -83,7 +83,10 @@ class MatrixDeserializer: JsonDeserializer<Any>() {
 
         val elements = text.split(",").filter { it.isNotEmpty() }
         val floats = elements.map { it.trim().trimStart().toFloat() }.toFloatArray()
-        val wrap = FloatBuffer.wrap(floats)
+        val wrap = ByteBuffer
+            .allocateDirect(floats.size * 4)
+            .asFloatBuffer()
+            .put(floats, 0, floats.size)
 
         return when(floats.size) {
             4 -> Matrix2f(wrap)
