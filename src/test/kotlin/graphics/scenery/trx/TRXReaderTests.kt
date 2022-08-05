@@ -18,6 +18,10 @@ class TRXReaderTests {
     @Test fun readDPSV() {
         logger.info("Reading dpsv.trx...")
         val trx = TRXReader.readTRXfromStream(this.javaClass.getResource("dpsv.trx").openStream())
+        trx.streamlines.forEachIndexed { index, streamline ->
+            assert(streamline.vertices.isNotEmpty()) { "Streamline $index/${trx.streamlines.size} should not be empty" }
+        }
+
         assertEquals(trx.header.streamlineCount, 460)
         assertEquals(trx.header.vertexCount, 95865)
     }
@@ -28,6 +32,10 @@ class TRXReaderTests {
     @Test fun readSmall() {
         logger.info("Reading small.trx...")
         val trx = TRXReader.readTRXfromStream(this.javaClass.getResource("small.trx").openStream())
+        trx.streamlines.forEachIndexed { index, streamline ->
+            assert(streamline.vertices.isNotEmpty()) { "Streamline $index/${trx.streamlines.size} should not be empty" }
+        }
+
         assertEquals(trx.header.streamlineCount, 1000)
         assertEquals(trx.header.vertexCount, 33886)
     }
@@ -38,12 +46,16 @@ class TRXReaderTests {
      */
     @Test fun readFile() {
         val file = System.getProperty("trx.filename")
-        if(file == null) {
+        val trx = if(file == null) {
             logger.info("Reading dpsv.trx...")
             TRXReader.readTRXfromStream(this.javaClass.getResource("dpsv.trx").openStream())
         } else {
             logger.info("Reading $file...")
             TRXReader.readTRX(file)
+        }
+
+        trx.streamlines.forEachIndexed { index, streamline ->
+            assert(streamline.vertices.isNotEmpty()) { "Streamline $index/${trx.streamlines.size} should not be empty" }
         }
     }
 
