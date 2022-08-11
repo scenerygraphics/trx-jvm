@@ -41,3 +41,15 @@ tasks.withType<KotlinCompile> {
 application {
     mainClass.set("MainKt")
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "graphics.scenery"
+            artifactId = rootProject.name
+            version = rootProject.version.toString()
+
+            from(components["java"])
+        }
+    }
+}
