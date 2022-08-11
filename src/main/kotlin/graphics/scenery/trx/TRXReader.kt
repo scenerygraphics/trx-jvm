@@ -13,10 +13,8 @@ import graphics.scenery.trx.utils.MatrixDeserializer
 import graphics.scenery.trx.utils.VectorDeserializer
 import net.imglib2.img.Img
 import net.imglib2.img.cell.CellImgFactory
-import net.imglib2.type.numeric.integer.LongType
 import net.imglib2.type.numeric.integer.UnsignedLongType
 import net.imglib2.type.numeric.real.FloatType
-import net.imglib2.view.Views
 import org.joml.Matrix4f
 import org.joml.Vector3i
 import java.io.File
@@ -228,7 +226,7 @@ class TRXReader {
                                 val x = it.next().get()
                                 val y = it.next().get()
                                 val z = it.next().get()
-//                                logger.trace("v=$x,$y,$z")
+                                logger.trace("v=$x,$y,$z")
                             }
                         }
                     }
