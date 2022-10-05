@@ -253,7 +253,7 @@ class TRXReader {
                     if(length == 0) {
                         logger.warn("Streamline #${streamlines.size+1} with zero length! Range is {}-{}, {} vertices", range.first, range.second, length)
                     }
-                    val v = FloatArray(length*3)
+                    val v = ArrayList<Float>(length*3)
 
                     for(i in range.first until range.second step 3) {
                         ra.setPosition(longArrayOf(i.toLong(), 1L))
@@ -263,14 +263,14 @@ class TRXReader {
                         ra.setPosition(longArrayOf(i.toLong()+2, 1L))
                         val z = ra.get().get()
 
-                        v[(i-range.first).toInt()] = x
-                        v[((i+1U)-range.first).toInt()] = y
-                        v[((i+2U)-range.first).toInt()] = z
+                        v.add(x)
+                        v.add(y)
+                        v.add(z)
 
                         logger.trace("v={}/{}/{}", x, y, z)
                     }
 
-                    streamlines.add(Streamline(v))
+                    streamlines.add(Streamline(v.toFloatArray()))
                     begin = end + 1UL
                     end = if(offsetIterator.hasNext()) {
                         offsetIterator.next().get().toULong() - 1UL
