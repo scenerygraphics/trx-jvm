@@ -246,9 +246,9 @@ class TRXReader {
                 var end = offsetIterator.next().get().toULong() - 1UL
 
                 while(streamlines.size < header.streamlineCount) {
-                    val range = begin to end
+                    val range = begin*3UL to end*3UL
 
-                    val length = (range.second - range.first).toInt()+1
+                    val length = (range.second - range.first).toInt()
                     logger.trace("Streamline #${streamlines.size+1}: Range is {}-{}, length {}", range.first, range.second, length)
                     if(length == 0) {
                         logger.warn("Streamline #${streamlines.size+1} with zero length! Range is {}-{}, {} vertices", range.first, range.second, length)
@@ -267,7 +267,7 @@ class TRXReader {
                         v.add(y)
                         v.add(z)
 
-                        logger.trace("v={}/{}/{}", x, y, z)
+                        logger.trace("v({})={}/{}/{}", i, x, y, z)
                     }
 
                     streamlines.add(Streamline(v.toFloatArray()))
