@@ -255,13 +255,19 @@ class TRXReader {
                     }
                     val v = FloatArray(length*3)
 
-                    for(i in range.first until range.second) {
+                    for(i in range.first until range.second step 3) {
                         ra.setPosition(longArrayOf(i.toLong(), 1L))
-                        v[(i-range.first).toInt()] = ra.get().get()
+                        val x = ra.get().get()
                         ra.setPosition(longArrayOf(i.toLong()+1, 1L))
-                        v[((i+1U)-range.first).toInt()] = ra.get().get()
+                        val y = ra.get().get()
                         ra.setPosition(longArrayOf(i.toLong()+2, 1L))
-                        v[((i+2U)-range.first).toInt()] = ra.get().get()
+                        val z = ra.get().get()
+
+                        v[(i-range.first).toInt()] = x
+                        v[((i+1U)-range.first).toInt()] = y
+                        v[((i+2U)-range.first).toInt()] = z
+
+                        logger.trace("v={}/{}/{}", x, y, z)
                     }
 
                     streamlines.add(Streamline(v))
