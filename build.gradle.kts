@@ -1,13 +1,21 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.ByteArrayOutputStream
 
 plugins {
     kotlin("jvm") version "1.7.10"
     `maven-publish`
     application
+    java
 }
 
 group = "graphics.scenery"
-version = "1.0-SNAPSHOT"
+version = if(project.hasProperty("jitpack")) {
+    val commit = getGitCommit()
+    println("jitpack.io-like build required, will identify as $group:$name:$commit")
+    commit
+} else {
+    "1.0-SNAPSHOT"
+}
 
 repositories {
     mavenCentral()
@@ -42,14 +50,45 @@ application {
     mainClass.set("MainKt")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+
+fun getGitCommit(): String {
+    val stdout = ByteArrayOutputStream()
+    rootProject.exec {
+        commandLine("git", "rev-parse", "--verify", "--short", "HEAD")
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+    /* 'g' doesn't belong to the commit id and stands for 'git'
+       v0.1.9-1-g3a259e0 -> v0.1.9-1-3a259e0
+       if you like this to be removed then */
+    //.replace("-g", "-")
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = "graphics.scenery"
             artifactId = rootProject.name
-            version = rootProject.version.toString()
+            version = if(project.hasProperty("jitpack")) {
+                val commit = getGitCommit()
+                println("jitpack.io-like build required, will identify as $groupId:$artifactId:$commit")
+                commit
+            } else {
+                rootProject.version.toString()
+            }
 
             from(components["java"])
+
+            pom {
+                name.set(rootProject.name)
+                description.set(rootProject.description)
+            }
         }
     }
 }
