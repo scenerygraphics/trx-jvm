@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import org.joml.*
-import java.nio.ByteBuffer
 
 class VectorDeserializer : JsonDeserializer<Any>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext?): Any {
@@ -83,17 +82,12 @@ class MatrixDeserializer: JsonDeserializer<Any>() {
 
         val elements = text.split(",").filter { it.isNotEmpty() }
         val floats = elements.map { it.trim().trimStart().toFloat() }.toFloatArray()
-        val wrap = ByteBuffer
-            .allocateDirect(floats.size * 4)
-            .asFloatBuffer()
-            .put(floats)
-            .flip()
 
         return when(floats.size) {
-            4 -> Matrix2f(wrap)
-            9 -> Matrix3f(wrap)
-            12 -> Matrix4x3f(wrap)
-            16 -> Matrix4f(wrap)
+            4 -> Matrix2f().set(floats)
+            9 -> Matrix3f().set(floats)
+            12 -> Matrix4x3f().set(floats)
+            16 -> Matrix4f().set(floats)
             else -> throw UnsupportedOperationException("Don't know what to do with matrix of size ${floats.size}")
         }
     }
